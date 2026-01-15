@@ -440,8 +440,8 @@ nav::-webkit-scrollbar-thumb {
 
 .nav-trash svg,
 .nav-clear svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
 }
 
 /* Editor Container */
@@ -1069,7 +1069,7 @@ body.changed #save {
     transform: rotate(90deg);
 }
 
-/* File type indicators and pointer-events for .log files */
+/* File type indicators - КОНФИГУРАЦИОННЫЕ ФАЙЛЫ ТЕПЕРЬ КРАСНЫЕ */
 .nav-tab[data-filename$=".conf"],
 .nav-tab[data-filename*=".conf-"] {
     padding-left: 32px;
@@ -1086,9 +1086,30 @@ body.changed #save {
     font-size: 0;
     width: 14px;
     height: 14px;
-    background: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z' stroke='%23007AFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M14 2v6h6' stroke='%23007AFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10 13H8' stroke='%23007AFF' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 13h-2' stroke='%23007AFF' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M10 17H8' stroke='%23007AFF' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 17h-2' stroke='%23007AFF' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+    background: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M14 2v6h6' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10 13H8' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 13h-2' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M10 17H8' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 17h-2' stroke='%23FF3B30' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
 }
 
+.nav-tab[data-filename$=".conf"]:hover,
+.nav-tab[data-filename*=".conf-"]:hover {
+    border-left-color: #ff1a1a;
+}
+
+.nav-tab.active[data-filename$=".conf"]::before,
+.nav-tab.active[data-filename*=".conf-"]::before {
+    filter: brightness(0) invert(1);
+}
+
+.nav-tab.active[data-filename$=".list"]::before,
+.nav-tab.active[data-filename*=".list-"]::before {
+    filter: brightness(0) invert(1);
+}
+
+.nav-tab.active[data-filename$=".log"]::before,
+.nav-tab.active[data-filename*=".log-"]::before {
+    filter: brightness(0) invert(1);
+}
+
+/* List files - зеленые как раньше */
 .nav-tab[data-filename$=".list"],
 .nav-tab[data-filename*=".list-"] {
     padding-left: 32px;
@@ -1108,6 +1129,7 @@ body.changed #save {
     background: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 6h13' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M8 12h13' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M8 18h13' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M3 6h.01' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M3 12h.01' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M3 18h.01' stroke='%2334C759' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
 }
 
+/* Log files - оранжевые как раньше */
 .nav-tab[data-filename$=".log"] {
     padding-left: 32px;
     position: relative;
@@ -1549,97 +1571,23 @@ body:not(.running) #start {
 /* Анимации для логотипа сломанного щита */
 .logo-icon {
     transition: transform 0.3s ease;
-    animation: shieldGlow 3s ease-in-out infinite;
 }
 
-@keyframes shieldGlow {
-    0%, 100% {
-        filter: drop-shadow(0 0 2px rgba(0, 122, 255, 0.3));
-    }
-    50% {
-        filter: drop-shadow(0 0 4px rgba(0, 122, 255, 0.6));
-    }
-}
-
-/* Анимация для основы щита */
 .shield-base {
-    animation: shieldPulse 4s ease-in-out infinite;
+    stroke: var(--color-accent);
 }
 
-@keyframes shieldPulse {
-    0%, 100% {
-        stroke-opacity: 1;
-        stroke-width: 2;
-    }
-    50% {
-        stroke-opacity: 0.8;
-        stroke-width: 2.2;
-    }
-}
-
-/* Анимация для основных трещин */
 .crack-main, .crack-secondary {
-    animation: crackFlash 2.5s ease-in-out infinite;
+    stroke: var(--color-error);
 }
 
-@keyframes crackFlash {
-    0%, 100% {
-        stroke-opacity: 0.7;
-        stroke-width: 2;
-    }
-    50% {
-        stroke-opacity: 1;
-        stroke-width: 2.5;
-    }
-}
-
-/* Анимация для мелких трещин */
 .small-crack {
-    animation: smallCrackPulse 2s ease-in-out infinite;
+    stroke: var(--color-warning);
 }
 
-@keyframes smallCrackPulse {
-    0%, 100% {
-        stroke-opacity: 0.6;
-        stroke-width: 1.5;
-    }
-    50% {
-        stroke-opacity: 0.9;
-        stroke-width: 1.8;
-    }
-}
-
-/* Задержки для разных мелких трещин */
-.crack-1 { animation-delay: 0s; }
-.crack-2 { animation-delay: 0.3s; }
-.crack-3 { animation-delay: 0.6s; }
-.crack-4 { animation-delay: 0.9s; }
-
-/* Анимация для фрагментов */
 .fragment {
-    animation: fragmentFloat 3s ease-in-out infinite;
+    fill: var(--color-error);
 }
-
-@keyframes fragmentFloat {
-    0%, 100% {
-        opacity: 0.7;
-        transform: translate(0, 0);
-    }
-    25% {
-        transform: translate(0.5px, -0.5px);
-    }
-    50% {
-        opacity: 1;
-        transform: translate(0, 0);
-    }
-    75% {
-        transform: translate(-0.5px, 0.5px);
-    }
-}
-
-/* Разные задержки для фрагментов */
-.fragment-1 { animation-delay: 0s; }
-.fragment-2 { animation-delay: 1.5s; }
 
 /* Эффект при наведении на логотип */
 .logo:hover .logo-icon {
@@ -1653,37 +1601,10 @@ body:not(.running) #start {
     75% { transform: translateX(-1px) rotate(-0.5deg); }
 }
 
-/* Темная тема для логотипа */
-[data-theme="dark"] .shield-base {
-    stroke: #0a84ff;
-}
-
-[data-theme="dark"] .crack-main,
-[data-theme="dark"] .crack-secondary {
-    stroke: #ff453a;
-}
-
-[data-theme="dark"] .small-crack {
-    stroke: #ff9f0a;
-}
-
-[data-theme="dark"] .fragment {
-    fill: #ff453a;
-}
-
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
     .logo-icon {
         width: 24px;
         height: 24px;
-    }
-    
-    @keyframes shieldGlow {
-        0%, 100% {
-            filter: drop-shadow(0 0 1px rgba(0, 122, 255, 0.3));
-        }
-        50% {
-            filter: drop-shadow(0 0 2px rgba(0, 122, 255, 0.6));
-        }
     }
 }
