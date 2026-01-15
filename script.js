@@ -1102,8 +1102,8 @@ class UI {
                 this.originalContent = this.editor.getValue();
                 document.body.classList.remove('changed');
                 
-                // Показываем уведомление в верхнем левом углу
-                this.showNotification(this.translations.fileSaved, 'success', 'left');
+                // Показываем уведомление в правом верхнем углу
+                this.showNotification(this.translations.fileSaved, 'success');
                 
                 // Обновляем историю после сохранения
                 if (this.historyManager) {
@@ -1159,7 +1159,7 @@ class UI {
             
             const successMessage = successMessages[action];
             if (successMessage) {
-                this.showNotification(successMessage, 'success', 'left');
+                this.showNotification(successMessage, 'success');
             }
             
             if (action === 'upgrade') {
@@ -1172,46 +1172,31 @@ class UI {
         document.body.classList.toggle('running', status);
     }
 
-    showNotification(message, type = 'success', position = 'left') {
+    showNotification(message, type = 'success') {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
         
-        // Определяем позицию уведомления
-        if (position === 'left') {
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                padding: 12px 20px;
-                background: ${type === 'success' ? '#34c759' : '#ff3b30'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 99999999;
-                animation: slideInLeft 0.3s ease;
-                max-width: 300px;
-            `;
-        } else {
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 12px 20px;
-                background: ${type === 'success' ? '#34c759' : '#ff3b30'};
-                color: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 99999999;
-                animation: slideIn 0.3s ease;
-                max-width: 300px;
-            `;
-        }
+        // Уведомления всегда показываются справа
+        notification.style.cssText = `
+            position: fixed;
+            top: 96px;
+            right: 30px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#34c759' : '#ff3b30'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 99999999;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+            word-break: break-word;
+        `;
         
         document.body.appendChild(notification);
         
         setTimeout(() => {
-            notification.style.animation = position === 'left' ? 'slideOutLeft 0.3s ease' : 'slideOut 0.3s ease';
+            notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
