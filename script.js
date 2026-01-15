@@ -297,7 +297,7 @@ class UI {
             if (isLog) {
                 const clear = document.createElement('div');
                 clear.classList.add('nav-clear');
-                clear.innerHTML = '🗑️';
+                clear.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
                 clear.title = this.translations.confirmClear || "Clear log";
 
                 clear.addEventListener('click', async (e) => {
@@ -321,7 +321,7 @@ class UI {
                 tab.classList.add('secondary');
                 const trash = document.createElement('div');
                 trash.classList.add('nav-trash');
-                trash.innerHTML = '🗑️';
+                trash.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
                 trash.title = this.translations.confirmDelete || "Delete file";
 
                 trash.addEventListener('click', async (e) => {
@@ -1188,7 +1188,7 @@ class UI {
                 color: white;
                 border-radius: 8px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
+                z-index: 99999999;
                 animation: slideInLeft 0.3s ease;
                 max-width: 300px;
             `;
@@ -1202,7 +1202,7 @@ class UI {
                 color: white;
                 border-radius: 8px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
+                z-index: 99999999;
                 animation: slideIn 0.3s ease;
                 max-width: 300px;
             `;
