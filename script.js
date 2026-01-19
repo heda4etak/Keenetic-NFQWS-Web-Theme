@@ -1163,6 +1163,12 @@ class UI {
             }
             
             if (action === 'upgrade') {
+                // Обновляем версию в футере
+                const result = await this.postData({ cmd: 'getversion' });
+                if (result && result.status === 0 && result.version) {
+                    document.getElementById('version').textContent = `v${result.version}`;
+                }
+                
                 setTimeout(() => window.location.reload(), 2000);
             }
         }

@@ -5,6 +5,37 @@ ini_set('memory_limit', '32M');
 define('ROOT_DIR', file_exists('/opt/etc/nfqws/nfqws.conf') ? '/opt' : '');
 define('SCRIPT_NAME', ROOT_DIR ? 'S51nfqws' : 'nfqws-keenetic');
 
+// Функция для получения версии nfqws-keenetic
+function getNfqwsVersion() {
+    $version = 'unknown';
+    
+    // Проверяем пакет opkg
+    exec("opkg list-installed | grep nfqws-keenetic", $output);
+    if (!empty($output)) {
+        foreach ($output as $line) {
+            if (preg_match('/nfqws-keenetic\s+-\s+([\d\.]+)/', $line, $matches)) {
+                $version = $matches[1];
+                break;
+            }
+        }
+    }
+    
+    // Проверяем пакет apk
+    if ($version === 'unknown') {
+        exec("apk list --installed | grep nfqws-keenetic", $output);
+        if (!empty($output)) {
+            foreach ($output as $line) {
+                if (preg_match('/nfqws-keenetic-([\d\.]+)/', $line, $matches)) {
+                    $version = $matches[1];
+                    break;
+                }
+            }
+        }
+    }
+    
+    return $version;
+}
+
 function normalizeString(string $s): string {
     // Convert all line-endings to UNIX format.
     $s = str_replace(array("\r\n", "\r", "\n"), "\n", $s);
@@ -179,6 +210,8 @@ function main() {
 
         case 'upgrade':
             $response = upgradeAction();
+            // После обновления получаем новую версию
+            $response['version'] = getNfqwsVersion();
             break;
 
         case 'login':
@@ -188,6 +221,10 @@ function main() {
         case 'logout':
             $_SESSION['auth'] = false;
             $response = array('status' => 0);
+            break;
+
+        case 'getversion':
+            $response = array('status' => 0, 'version' => getNfqwsVersion());
             break;
 
         default:
