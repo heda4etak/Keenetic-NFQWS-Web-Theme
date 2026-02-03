@@ -1016,6 +1016,17 @@ footer {
     border: var(--border-light);
 }
 
+.footer-version a {
+    padding-left: 7px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+
+.footer-version a:hover {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
 /* Overlay */
 #overlay {
     position: fixed;

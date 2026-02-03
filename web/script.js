@@ -14,6 +14,7 @@ import { applyService } from './modules/service.js';
 import { applyI18nTheme } from './modules/i18n-theme.js';
 import { applyEditor } from './modules/editor.js';
 import { applyNotifications } from './modules/notifications.js';
+import { applyVersion } from './modules/version.js';
 
 
 class UI {
@@ -53,6 +54,7 @@ class UI {
         if (!localStorage.getItem(STORAGE_KEYS.theme)) {
             localStorage.setItem(STORAGE_KEYS.theme, THEMES.dark);
         }
+        this.initBaseState();
         this.cacheDom();
         await this.loadTranslations();
         this.initCodeMirror();
@@ -191,6 +193,7 @@ class UI {
         this.initDuplicatesPopup();
         this.initComparePopup();
         this.initAvailabilityPopup();
+        this.initVersion();
     }
 
     cacheDom() {
@@ -515,6 +518,7 @@ applyService(UI);
 applyI18nTheme(UI);
 applyEditor(UI);
 applyNotifications(UI);
+applyVersion(UI);
 
 // Start the UI
 document.addEventListener('DOMContentLoaded', () => {

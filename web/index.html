@@ -36,56 +36,6 @@
     <link rel="stylesheet" href="style.css?v=v2.10.8">
 </head>
 <body class="unknown">
-<script>
-    // Инициализация темы и языка
-    localStorage.setItem('theme', localStorage.getItem('theme') || 'dark');
-    const theme = localStorage.getItem('theme');
-    const lang = localStorage.getItem('lang') || 'en';
-    
-    const root = document.querySelector(':root');
-    root.dataset.theme = theme;
-    
-    document.documentElement.lang = lang;
-    
-    // Сразу убираем disabled класс для предотвращения overlay
-    document.body.classList.remove('disabled');
-    
-    // Проверяем наличие активной сессии
-    const hasSession = localStorage.getItem('hasSession') === 'true';
-    if (hasSession) {
-        document.body.classList.add('authenticated');
-    }
-    
-    // Функция для получения и установки версии
-    async function initVersion() {
-        try {
-            const response = await fetch('index.php', {
-                method: 'POST',
-                body: new URLSearchParams({cmd: 'getversion'}),
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.status === 0 && data.version) {
-                    document.getElementById('version').textContent = `v${data.version}`;
-                } else {
-                    document.getElementById('version').textContent = 'vunknown';
-                }
-            } else {
-                document.getElementById('version').textContent = 'vunknown';
-            }
-        } catch (error) {
-            document.getElementById('version').textContent = 'vunknown';
-        }
-    }
-    
-    // Инициализируем версию при загрузке страницы
-    document.addEventListener('DOMContentLoaded', initVersion);
-</script>
-
 <header>
     <h1 class="logo">
         Keenetic NFQWS <span id="status"></span>
