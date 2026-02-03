@@ -77,6 +77,7 @@ if [ "$WITH_BACKUP" = "true" ] && [ -d "$TARGET" ]; then
     cp -a "$TARGET" "${TARGET}.bak" >/dev/null 2>&1 || true
 fi
 
+mkdir -p "$TMP/unpacked"
 tar -xzf "$ARCHIVE" -C "$TMP/unpacked"
 cp -a "$TMP/unpacked/." "$TARGET/"
 
