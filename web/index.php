@@ -2,17 +2,77 @@
 
 ini_set('memory_limit', '32M');
 
-define('NFQWS2', file_exists('/opt/usr/bin/nfqws2') || file_exists('/usr/bin/nfqws2'));
+define('NFQWS_INSTALLED', file_exists('/opt/usr/bin/nfqws') || file_exists('/usr/bin/nfqws'));
+define('NFQWS2_INSTALLED', file_exists('/opt/usr/bin/nfqws2') || file_exists('/usr/bin/nfqws2'));
 define('ROOT_DIR', (file_exists('/opt/usr/bin/nfqws2') || file_exists('/opt/usr/bin/nfqws')) ? '/opt' : '');
-const SCRIPT_NAME = ROOT_DIR ? (NFQWS2 ? 'S51nfqws2' : 'S51nfqws') : (NFQWS2 ? 'nfqws2-keenetic' : 'nfqws-keenetic');
-const CONF_DIR = NFQWS2 ? '/etc/nfqws2' : '/etc/nfqws';
-const LISTS_DIR = NFQWS2 ? '/etc/nfqws2/lists' : '/etc/nfqws';
-const LOG_FILE = NFQWS2 ? '/var/log/nfqws2.log' : '/var/log/nfqws.log';
+
+function getScriptName(string $version): string {
+    if (ROOT_DIR) {
+        return $version === 'nfqws2' ? 'S51nfqws2' : 'S51nfqws';
+    }
+    return $version === 'nfqws2' ? 'nfqws2-keenetic' : 'nfqws-keenetic';
+}
+
+function getPaths(string $version): array {
+    if ($version === 'nfqws2') {
+        return [
+            'conf_dir' => '/etc/nfqws2',
+            'lists_dir' => '/etc/nfqws2/lists',
+            'log_file' => '/var/log/nfqws2.log',
+            'primary_conf' => 'nfqws2.conf',
+            'log_name' => 'nfqws2.log'
+        ];
+    }
+    return [
+        'conf_dir' => '/etc/nfqws',
+        'lists_dir' => '/etc/nfqws',
+        'log_file' => '/var/log/nfqws.log',
+        'primary_conf' => 'nfqws.conf',
+        'log_name' => 'nfqws.log'
+    ];
+}
+
+function getDefaultSelectedVersion(): string {
+    return NFQWS2_INSTALLED ? 'nfqws2' : 'nfqws';
+}
+
+function getSelectedVersion(): string {
+    return $_SESSION['selected_version'] ?? getDefaultSelectedVersion();
+}
+
+function setSelectedVersion(string $version): void {
+    $_SESSION['selected_version'] = $version;
+}
+
+function isInstalled(string $version): bool {
+    return $version === 'nfqws2' ? NFQWS2_INSTALLED : NFQWS_INSTALLED;
+}
+
+function getServiceStatusByVersion(string $version): bool {
+    $script = getScriptName($version);
+    $path = ROOT_DIR . "/etc/init.d/" . $script;
+    if (!file_exists($path)) {
+        return false;
+    }
+    $output = null;
+    exec($path . " status", $output);
+    return str_contains($output[0] ?? '', 'is running');
+}
+
+function getActiveVersion(): string {
+    if (getServiceStatusByVersion('nfqws2')) {
+        return 'nfqws2';
+    }
+    if (getServiceStatusByVersion('nfqws')) {
+        return 'nfqws';
+    }
+    return 'none';
+}
 
 // Функция для получения версии пакета nfqws/nfqws2
-function getNfqwsVersion() {
-    $version = '';
-    $pkg = NFQWS2 ? 'nfqws2-keenetic' : 'nfqws-keenetic';
+function getNfqwsVersion(string $version): string {
+    $found = '';
+    $pkg = $version === 'nfqws2' ? 'nfqws2-keenetic' : 'nfqws-keenetic';
 
     $opkg = null;
     if (file_exists('/opt/bin/opkg')) {
@@ -24,7 +84,7 @@ function getNfqwsVersion() {
     if ($opkg) {
         $output = null;
         exec("{$opkg} status {$pkg} | awk -F': ' '/^Version:/ {print $2}'", $output);
-        $version = $output[0] ?? '';
+        $found = $output[0] ?? '';
     }
 
     $apk = null;
@@ -38,17 +98,30 @@ function getNfqwsVersion() {
         $apk = '/opt/bin/apk';
     }
 
-    if (empty($version) && $apk) {
+    if (empty($found) && $apk) {
         $output = null;
         exec("{$apk} info {$pkg} 2>/dev/null | head -n 1", $output);
         if (!empty($output[0])) {
             if (preg_match('/' . preg_quote($pkg, '/') . '-([0-9][0-9a-zA-Z\.\-\+~]*)/', $output[0], $matches)) {
-                $version = $matches[1] ?? '';
+                $found = $matches[1] ?? '';
             }
         }
     }
 
-    return $version ?: 'unknown';
+    return $found ?: 'unknown';
+}
+
+function getVersionInfo(string $version): array {
+    $ver = getNfqwsVersion($version);
+    $installed = isInstalled($version);
+    if (!$installed && $ver !== 'unknown') {
+        $installed = true;
+    }
+    return [
+        'version' => $ver,
+        'installed' => $installed,
+        'active' => getActiveVersion() === $version
+    ];
 }
 
 function normalizeString(string $s): string {
@@ -67,27 +140,29 @@ function normalizeString(string $s): string {
 }
 
 function getFiles(): array {
+    $version = getSelectedVersion();
+    $paths = getPaths($version);
     // GLOB_BRACE is unsupported in openwrt
     $basenames = [];
 
-    if (NFQWS2) {
-        $lists = array_filter(glob(ROOT_DIR . LISTS_DIR . '/*'), function ($file) {
+    if ($version === 'nfqws2') {
+        $lists = array_filter(glob(ROOT_DIR . $paths['lists_dir'] . '/*'), function ($file) {
             return is_file($file) && preg_match('/\.(list|list-opkg|list-old)$/i', $file);
         });
         $basenames = array_map(fn($file) => basename($file), $lists);
 
-        $confs = array_filter(glob(ROOT_DIR . CONF_DIR . '/*'), function ($file) {
+        $confs = array_filter(glob(ROOT_DIR . $paths['conf_dir'] . '/*'), function ($file) {
             return is_file($file) && preg_match('/\.(conf|conf-opkg|conf-old|apk-new)$/i', $file);
         });
         $basenames = array_merge($basenames, array_map(fn($file) => basename($file), $confs));
     } else {
-        $files = array_filter(glob(ROOT_DIR . CONF_DIR . '/*'), function ($file) {
+        $files = array_filter(glob(ROOT_DIR . $paths['conf_dir'] . '/*'), function ($file) {
             return is_file($file) && preg_match('/\.(list|list-opkg|list-old|conf|conf-opkg|conf-old|apk-new)$/i', $file);
         });
         $basenames = array_map(fn($file) => basename($file), $files);
     }
 
-    $logfile = ROOT_DIR . LOG_FILE;
+    $logfile = ROOT_DIR . $paths['log_file'];
     if (file_exists($logfile)) {
         array_push($basenames, basename($logfile));
     }
@@ -100,7 +175,7 @@ function getFiles(): array {
         'auto.list' => -4,
         'ipset.list' => -3,
         'ipset_exclude.list' => -2,
-        basename(LOG_FILE) => -1
+        $paths['log_name'] => -1
     ];
     usort($basenames, fn($a, $b) => ($priority[$a] ?? 1) - ($priority[$b] ?? -1));
 
@@ -108,37 +183,43 @@ function getFiles(): array {
 }
 
 function getFileContent(string $filename): string {
+    $version = getSelectedVersion();
+    $paths = getPaths($version);
     $filename = basename($filename);
-    if (NFQWS2 && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
-        return file_get_contents(ROOT_DIR . LISTS_DIR . '/' . $filename);
+    if ($version === 'nfqws2' && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
+        return file_get_contents(ROOT_DIR . $paths['lists_dir'] . '/' . $filename);
     }
-    return file_get_contents(ROOT_DIR . CONF_DIR . '/' . $filename);
+    return file_get_contents(ROOT_DIR . $paths['conf_dir'] . '/' . $filename);
 }
 
 function getLogContent(string $filename): string {
-    $file = file(ROOT_DIR . LOG_FILE);
+    $version = getSelectedVersion();
+    $paths = getPaths($version);
+    $file = file(ROOT_DIR . $paths['log_file']);
     $file = array_reverse($file);
     return implode("", $file);
 }
 
 function saveFile(string $filename, string $content) {
+    $version = getSelectedVersion();
+    $paths = getPaths($version);
     $filename = basename($filename);
     if (preg_match('/\.(log)$/i', $filename)) {
-        $file = ROOT_DIR . LOG_FILE;
-    } elseif (NFQWS2 && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
-        $file = ROOT_DIR . LISTS_DIR . '/' . $filename;
+        $file = ROOT_DIR . $paths['log_file'];
+    } elseif ($version === 'nfqws2' && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
+        $file = ROOT_DIR . $paths['lists_dir'] . '/' . $filename;
     } else {
-        $file = ROOT_DIR . CONF_DIR . '/' . $filename;
+        $file = ROOT_DIR . $paths['conf_dir'] . '/' . $filename;
     }
 
     $protected = [
-        NFQWS2 ? 'nfqws2.conf' : 'nfqws.conf',
+        $paths['primary_conf'],
         'user.list',
         'exclude.list',
         'auto.list',
         'ipset.list',
         'ipset_exclude.list',
-        basename(LOG_FILE)
+        $paths['log_name']
     ];
     if (!file_exists($file) && in_array($filename, $protected, true)) {
         return false;
@@ -152,20 +233,22 @@ function saveLog(string $filename, string $content) {
 }
 
 function removeFile(string $filename) {
+    $version = getSelectedVersion();
+    $paths = getPaths($version);
     $filename = basename($filename);
-    if (NFQWS2 && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
-        $file = ROOT_DIR . LISTS_DIR . '/' . $filename;
+    if ($version === 'nfqws2' && preg_match('/\.(list|list-opkg|list-old)$/i', $filename)) {
+        $file = ROOT_DIR . $paths['lists_dir'] . '/' . $filename;
     } else {
-        $file = ROOT_DIR . CONF_DIR . '/' . $filename;
+        $file = ROOT_DIR . $paths['conf_dir'] . '/' . $filename;
     }
     $protected = [
-        NFQWS2 ? 'nfqws2.conf' : 'nfqws.conf',
+        $paths['primary_conf'],
         'user.list',
         'exclude.list',
         'auto.list',
         'ipset.list',
         'ipset_exclude.list',
-        basename(LOG_FILE)
+        $paths['log_name']
     ];
     if (in_array($filename, $protected, true)) {
         return false;
@@ -178,22 +261,22 @@ function removeFile(string $filename) {
 }
 
 function nfqwsServiceStatus() {
-    $output = null;
-    exec(ROOT_DIR . "/etc/init.d/" . SCRIPT_NAME . " status", $output);
-    return str_contains($output[0] ?? '', 'is running');
+    return getServiceStatusByVersion(getSelectedVersion());
 }
 
 function nfqwsServiceAction(string $action) {
     $output = null;
     $retval = null;
-    exec(ROOT_DIR . "/etc/init.d/" . SCRIPT_NAME . " $action", $output, $retval);
+    $script = getScriptName(getSelectedVersion());
+    exec(ROOT_DIR . "/etc/init.d/" . $script . " $action", $output, $retval);
     return array('output' => $output, 'status' => $retval);
 }
 
 function opkgUpgradeAction() {
     $output = null;
     $retval = null;
-    if (NFQWS2) {
+    $version = getSelectedVersion();
+    if ($version === 'nfqws2') {
         exec("opkg update && opkg upgrade nfqws2-keenetic nfqws-keenetic-web", $output, $retval);
     } else {
         exec("opkg update && opkg upgrade nfqws-keenetic nfqws-keenetic-web", $output, $retval);
@@ -207,7 +290,8 @@ function opkgUpgradeAction() {
 function apkUpgradeAction() {
     $output = null;
     $retval = null;
-    if (NFQWS2) {
+    $version = getSelectedVersion();
+    if ($version === 'nfqws2') {
         exec("apk --update-cache add nfqws2-keenetic nfqws-keenetic-web", $output, $retval);
     } else {
         exec("apk --update-cache add nfqws-keenetic nfqws-keenetic-web", $output, $retval);
@@ -220,6 +304,48 @@ function apkUpgradeAction() {
 
 function upgradeAction() {
     return file_exists('/usr/bin/apk') ? apkUpgradeAction() : opkgUpgradeAction();
+}
+
+function selectVersion(string $target): array {
+    if (!in_array($target, ['nfqws', 'nfqws2'], true)) {
+        return array('status' => 1, 'output' => ['Invalid version']);
+    }
+    if (!isInstalled($target)) {
+        return array('status' => 1, 'output' => ['Version not installed']);
+    }
+    setSelectedVersion($target);
+    return array('status' => 0, 'selectedVersion' => $target, 'activeVersion' => getActiveVersion());
+}
+
+function switchVersion(string $target): array {
+    if (!in_array($target, ['nfqws', 'nfqws2'], true)) {
+        return array('status' => 1, 'output' => ['Invalid version']);
+    }
+    if (!isInstalled($target)) {
+        return array('status' => 1, 'output' => ['Version not installed']);
+    }
+
+    $output = [];
+    $retval = 0;
+    $currentActive = getActiveVersion();
+
+    if ($currentActive !== 'none' && $currentActive !== $target) {
+        $currentScript = getScriptName($currentActive);
+        exec(ROOT_DIR . "/etc/init.d/" . $currentScript . " stop", $output, $retval);
+    }
+
+    $targetScript = getScriptName($target);
+    exec(ROOT_DIR . "/etc/init.d/" . $targetScript . " start", $output, $retval);
+
+    setSelectedVersion($target);
+
+    return array(
+        'status' => $retval ?? 0,
+        'output' => $output,
+        'selectedVersion' => $target,
+        'activeVersion' => getActiveVersion(),
+        'service' => getServiceStatusByVersion($target)
+    );
 }
 
 function authenticate($username, $password) {
@@ -258,16 +384,24 @@ function main() {
             $_SESSION['auth'] = true;
         }
     }
+    if (!isset($_SESSION['selected_version'])) {
+        $_SESSION['selected_version'] = getDefaultSelectedVersion();
+    }
 
     switch ($_POST['cmd']) {
         case 'filenames':
             $files = getFiles();
+            $selectedVersion = getSelectedVersion();
             $response = array(
                 'status' => 0,
                 'files' => $files,
                 'service' => nfqwsServiceStatus(),
-                'nfqws2' => NFQWS2,
-                'version' => getNfqwsVersion()
+                'nfqws2' => $selectedVersion === 'nfqws2',
+                'version' => getNfqwsVersion($selectedVersion),
+                'selectedVersion' => $selectedVersion,
+                'activeVersion' => getActiveVersion(),
+                'nfqwsInstalled' => NFQWS_INSTALLED,
+                'nfqws2Installed' => NFQWS2_INSTALLED
             );
             break;
 
@@ -304,7 +438,7 @@ function main() {
         case 'upgrade':
             $response = upgradeAction();
             // После обновления получаем новую версию
-            $response['version'] = getNfqwsVersion();
+            $response['version'] = getNfqwsVersion(getSelectedVersion());
             break;
 
         case 'login':
@@ -317,7 +451,40 @@ function main() {
             break;
 
         case 'getversion':
-            $response = array('status' => 0, 'version' => getNfqwsVersion(), 'nfqws2' => NFQWS2);
+            $targetVersion = $_POST['version'] ?? getSelectedVersion();
+            if (!in_array($targetVersion, ['nfqws', 'nfqws2'], true)) {
+                $targetVersion = getSelectedVersion();
+            }
+            $info = getVersionInfo($targetVersion);
+            $response = array(
+                'status' => 0,
+                'version' => $info['version'],
+                'installed' => $info['installed'],
+                'active' => $info['active'],
+                'nfqws2' => $targetVersion === 'nfqws2',
+                'selectedVersion' => getSelectedVersion(),
+                'activeVersion' => getActiveVersion()
+            );
+            break;
+        case 'versions':
+            $selectedVersion = getSelectedVersion();
+            $response = array(
+                'status' => 0,
+                'selectedVersion' => $selectedVersion,
+                'activeVersion' => getActiveVersion(),
+                'nfqws' => getVersionInfo('nfqws'),
+                'nfqws2' => getVersionInfo('nfqws2'),
+                'nfqwsInstalled' => NFQWS_INSTALLED,
+                'nfqws2Installed' => NFQWS2_INSTALLED
+            );
+            break;
+        case 'select':
+            $targetVersion = $_POST['version'] ?? '';
+            $response = selectVersion($targetVersion);
+            break;
+        case 'switch':
+            $targetVersion = $_POST['version'] ?? '';
+            $response = switchVersion($targetVersion);
             break;
 
         default:

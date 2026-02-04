@@ -15,6 +15,7 @@ import { applyI18nTheme } from './modules/i18n-theme.js';
 import { applyEditor } from './modules/editor.js';
 import { applyNotifications } from './modules/notifications.js';
 import { applyVersion } from './modules/version.js';
+import { applyVersionSwitcher } from './modules/version-switcher.js';
 
 
 class UI {
@@ -37,6 +38,12 @@ class UI {
         this.primaryConfigName = 'nfqws.conf';
         this.logFileName = 'nfqws.log';
         this.protectedFiles = new Set(this.getDefaultProtectedFiles());
+        this.versionsInfo = {
+            nfqws: { installed: false, version: 'unknown', active: false },
+            nfqws2: { installed: false, version: 'unknown', active: false }
+        };
+        this.activeVersion = 'none';
+        this.selectedVersion = 'nfqws';
         this.syntaxMode = localStorage.getItem(STORAGE_KEYS.syntaxMode) || 'nfqws';
         this.filesSet = new Set();
         this.addButton = null;
@@ -168,7 +175,25 @@ class UI {
                 toolsTitle: "Tools",
                 syntaxCustom: "NFQWS",
                 syntaxShell: "Shell",
-                syntaxToggle: "Switch syntax highlighting"
+                syntaxToggle: "Switch syntax highlighting",
+                switchVersion: "Select Version",
+                switchVersionTitle: "Switch Version",
+                currentVersion: "Current Version:",
+                selectVersion: "Select Version:",
+                active: "Active",
+                inactive: "Inactive",
+                installed: "Installed",
+                notInstalled: "Not installed",
+                confirmSwitch: "Switch version and restart service?",
+                confirmSelect: "Select version for editing?",
+                switching: "Switching version...",
+                selecting: "Selecting version...",
+                versionSwitched: "Version switched successfully",
+                versionSelected: "Version selected for editing",
+                selectWarning: "Only version selection, service will not be started",
+                switchWarning: "Service will be restarted during switching",
+                alreadySelected: "Already selected",
+                versionNotInstalled: "Version not installed"
             };
         }
     }
@@ -190,6 +215,8 @@ class UI {
         this.initComparePopup();
         this.initAvailabilityPopup();
         this.initVersion();
+        this.initVersionSwitcher();
+        this.initSwitchVersionPopup();
     }
 
     cacheDom() {
@@ -200,7 +227,10 @@ class UI {
             editorContainer: document.querySelector('.editor-container'),
             serviceName: byId('service-name'),
             save: byId('save'),
-            restart: byId('restart'),
+            restartButtons: document.querySelectorAll('[data-action="restart"]'),
+            restartTextEls: document.querySelectorAll('[data-role="restart-text"]'),
+            versionSwitcherButtons: document.querySelectorAll('[data-action="version-switcher"]'),
+            versionSwitcherTextEls: document.querySelectorAll('[data-role="version-switcher-text"]'),
             dropdown: byId('dropdown'),
             dropdownMenu: byId('dropdown-menu'),
             reload: byId('reload'),
@@ -231,7 +261,6 @@ class UI {
             currentFilename: byId('current-filename'),
             config: byId('config'),
             saveText: byId('save-text'),
-            restartText: byId('restart-text'),
             reloadText: byId('reload-text'),
             stopText: byId('stop-text'),
             startText: byId('start-text'),
@@ -282,6 +311,21 @@ class UI {
             compareContentMobile: byId('compare-content-mobile'),
             githubLink: byId('github-link'),
             repoLink: byId('repo-link'),
+            switchVersionPopup: byId('switch-version-popup'),
+            switchVersionCancel: byId('switch-version-cancel'),
+            switchVersionConfirm: byId('switch-version-confirm'),
+            switchVersionTitle: byId('switch-version-title'),
+            currentVersionLabel: byId('current-version-label'),
+            selectVersionLabel: byId('select-version-label'),
+            currentVersionDisplay: byId('current-version-display'),
+            nfqwsStatus: byId('nfqws-status'),
+            nfqws2Status: byId('nfqws2-status'),
+            versionInfo: byId('version-info'),
+            selectedVersionStatus: byId('selected-version-status'),
+            selectedVersionValue: byId('selected-version'),
+            selectedInstalled: byId('selected-installed'),
+            switchWarning: byId('switch-warning'),
+            warningText: byId('warning-text'),
             theme: byId('theme'),
             languageSwitcher: byId('language-switcher'),
             syntaxToggle: byId('syntax-toggle'),
@@ -315,8 +359,15 @@ class UI {
             checkListButton.addEventListener('click', () => this.checkListDuplicates());
         }
         
-        // Restart button
-        this.dom.restart.addEventListener('click', () => this.confirmServiceAction('restart'));
+        // Restart buttons (desktop + mobile)
+        if (this.dom.restartButtons) {
+            this.dom.restartButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    this.hideMenu(this.dom.dropdownMenu);
+                    this.confirmServiceAction('restart');
+                });
+            });
+        }
         
         // Dropdown button
         this.dom.dropdown.addEventListener('click', (e) => {
@@ -561,6 +612,7 @@ applyI18nTheme(UI);
 applyEditor(UI);
 applyNotifications(UI);
 applyVersion(UI);
+applyVersionSwitcher(UI);
 
 // Start the UI
 document.addEventListener('DOMContentLoaded', () => {

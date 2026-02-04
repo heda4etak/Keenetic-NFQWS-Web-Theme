@@ -4,6 +4,12 @@ export function applyFiles(UI) {
             try {
                 const response = await this.getFiles();
                 this.updateServiceMeta(response || {});
+                if (response && response.selectedVersion) {
+                    this.selectedVersion = response.selectedVersion;
+                }
+                if (response && response.activeVersion) {
+                    this.activeVersion = response.activeVersion;
+                }
                 this.setStatus(response.service);
                 if (response && response.version && this.version?.setCurrent) {
                     this.version.setCurrent(`v${response.version}`, response.nfqws2);

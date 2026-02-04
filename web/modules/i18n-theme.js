@@ -43,7 +43,11 @@ export function applyI18nTheme(UI) {
         applyTranslations() {
             // Buttons
             this.dom.saveText.textContent = this.translations.save;
-            this.dom.restartText.textContent = this.translations.restart;
+            if (this.dom.restartTextEls) {
+                this.dom.restartTextEls.forEach((el) => {
+                    el.textContent = this.translations.restart;
+                });
+            }
             this.dom.reloadText.textContent = this.translations.reload;
             this.dom.stopText.textContent = this.translations.stop;
             this.dom.startText.textContent = this.translations.start;
@@ -135,6 +139,36 @@ export function applyI18nTheme(UI) {
             }
             if (toolsLabel) {
                 toolsLabel.textContent = this.translations.toolsLabel || 'Tools';
+            }
+            const versionSwitcher = this.dom.versionSwitcher;
+            if (versionSwitcher) {
+                versionSwitcher.title = this.translations.switchVersion || 'Select Version';
+            }
+            const versionSwitcherTextEls = this.dom.versionSwitcherTextEls;
+            if (versionSwitcherTextEls) {
+                versionSwitcherTextEls.forEach((el) => {
+                    el.textContent = this.translations.switchVersion || 'Select Version';
+                });
+            }
+            const switchTitle = this.dom.switchVersionTitle;
+            if (switchTitle) {
+                switchTitle.textContent = this.translations.switchVersionTitle || 'Switch Version';
+            }
+            const currentVersionLabel = this.dom.currentVersionLabel;
+            if (currentVersionLabel) {
+                currentVersionLabel.textContent = this.translations.currentVersion || 'Current Version:';
+            }
+            const selectVersionLabel = this.dom.selectVersionLabel;
+            if (selectVersionLabel) {
+                selectVersionLabel.textContent = this.translations.selectVersion || 'Select Version:';
+            }
+            const switchCancel = this.dom.switchVersionCancel;
+            if (switchCancel) {
+                switchCancel.textContent = this.translations.cancel || 'Cancel';
+            }
+            const switchConfirm = this.dom.switchVersionConfirm;
+            if (switchConfirm) {
+                switchConfirm.textContent = this.translations.switchVersion || 'Select Version';
             }
             this.updateListDuplicateMarkers();
             this.updateStatusTooltip();

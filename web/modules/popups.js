@@ -186,6 +186,12 @@ export function applyPopups(UI) {
                     if (closeByClicking(createPopup.querySelector('.popup-close-btn'))) return;
                 }
 
+                const switchPopup = this.dom.switchVersionPopup;
+                if (switchPopup && !switchPopup.classList.contains(CLASSNAMES.hidden)) {
+                    if (closeByClicking(this.dom.switchVersionCancel)) return;
+                    if (closeByClicking(switchPopup.querySelector('.popup-close-btn'))) return;
+                }
+
                 if (alertPopup && !alertPopup.classList.contains(CLASSNAMES.hidden)) {
                     if (closeByClicking(this.dom.popupClose)) return;
                 }

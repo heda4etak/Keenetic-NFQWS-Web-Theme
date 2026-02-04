@@ -10,6 +10,7 @@ CodeMirror.defineMode("nfqws-conf", function(config, parserConfig) {
     var ops = wordRegexp(["iptables", "ip", "tc", "route", "sysctl", "echo"]);
     var coreKeys = wordRegexp([
         "ISP_INTERFACE",
+        "NFQWS_BASE_ARGS",
         "NFQWS_ARGS",
         "NFQWS_ARGS_CUSTOM",
         "NFQWS_ARGS_QUIC",
